@@ -1,0 +1,15 @@
+target_sources(flatter
+  PRIVATE
+    matrix_multiplication.cpp
+    base.cpp
+    aliased.cpp
+    elementary_mpfr.cpp
+    elementary_mpz.cpp
+    elementary_native.cpp
+    elementary_RRZ.cpp
+    elementary_RRl.cpp
+    elementary_ZZl.cpp
+    strassen.cpp
+    threaded.cpp
+    tri_matmul.cpp
+)

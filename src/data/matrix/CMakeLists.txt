@@ -1,0 +1,10 @@
+target_sources(flatter
+  PRIVATE
+  matrix.cpp
+  matrix_data.cpp
+  matrix_data_mpfr.cpp
+  matrix_data_mpz.cpp
+  matrix_data_int64.cpp
+  matrix_data_double.cpp
+  workspace_buffer.cpp
+)
