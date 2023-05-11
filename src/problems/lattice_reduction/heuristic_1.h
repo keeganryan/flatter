@@ -19,6 +19,8 @@ protected:
     virtual void update_L_representation();
     virtual void update_R_representation();
     virtual void update_all_representation();
+
+    int get_total_shift();
 };
 
 }

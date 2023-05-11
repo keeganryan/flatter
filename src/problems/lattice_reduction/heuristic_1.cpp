@@ -297,8 +297,7 @@ void Heuristic1::update_L_representation() {
     //compress_R();
     {
         int *shifts = compression_iters.back();
-        this->get_shifts_for_compression(shifts);
-        int total_shift = shifts[0];
+        int total_shift = get_total_shift();
         for (unsigned int i = 0; i < n; i++) {
             shifts[i] = total_shift;
         }
@@ -452,8 +451,7 @@ void Heuristic1::update_R_representation() {
             // Writes compressed basis to B and updates profile.
 
             int *shifts = compression_iters.back();
-            this->get_shifts_for_compression(shifts);
-            int total_shift = shifts[0];
+            int total_shift = get_total_shift();
             for (unsigned int i = 0; i < n; i++) {
                 shifts[i] = total_shift;
             }
@@ -573,6 +571,16 @@ void Heuristic1::update_all_representation() {
         mm_check.solve();
         Matrix::copy(params.B2, B2p);
     }
+}
+
+int Heuristic1::get_total_shift() {
+    // Use estimated log_cond to resize the basis entries.
+    unsigned int max_p = B.prec();
+
+    unsigned int precision = get_precision_from_spread(this->params.log_cond);
+
+    int new_shift = (int)max_p - precision;
+    return new_shift;
 }
 
 }
