@@ -27,3 +27,7 @@ target_link_libraries(flatter
   PUBLIC
     ${FPLLL_LIBRARIES}
 )
+target_include_directories(flatter
+  PRIVATE
+    ${FPLLL_INCLUDE_DIRS}
+)
