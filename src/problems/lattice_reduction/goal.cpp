@@ -1,5 +1,6 @@
 #include "problems/lattice_reduction/goal.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cmath>
@@ -166,11 +167,11 @@ void LatticeReductionGoal::set_best_slope(double slope) {
     double s_guess = 3 * (1 + pow(3, lgn+1) - pow(2, lgn+2))/2;
     
     double gap = quality * s_guess / n;
-    double new_gap = gap + (this->best_slope - best_slope);
+    double new_gap = gap + (this->best_slope - slope);
     new_gap *= n;
     assert(new_gap > 0);
     this->quality = new_gap / s_guess;
-    this->best_slope = best_slope;
+    this->best_slope = slope;
 }
 
 LatticeReductionGoal LatticeReductionGoal::from_RHF(unsigned int n, double rhf, bool proved) {

@@ -1,6 +1,7 @@
 #include "data/matrix/matrix_data.h"
 
 #include <cassert>
+#include <cinttypes>
 #include <gmp.h>
 
 namespace flatter {
@@ -51,7 +52,7 @@ void MatrixData<int64_t>::fprint(FILE* f, const MatrixData<int64_t>& A) {
     for (unsigned int i = 0; i < A.nrows(); i++) {
         fprintf(f, "[");
         for (unsigned int j = 0; j < A.ncols(); j++) {
-            fprintf(f, "%ld ", A(i, j));
+            fprintf(f, "%" PRId64 " ", A(i, j));
         }
         fprintf(f, "]\n");
     }

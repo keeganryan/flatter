@@ -77,7 +77,6 @@ void Columnwise::solve() {
 
     for (unsigned int i = 0; i < n; i++) {
         bool must_repeat = false;
-        unsigned int iter = 0;
         double mu_max = INFINITY;
         do {
             // Check if size reduced
@@ -135,7 +134,6 @@ void Columnwise::solve() {
                 must_repeat = false;
             }
             mu_max = round_mu_max;
-            iter += 1;
             if (must_repeat) {
                 // Re orthogonalize
                 // Copy column from B to R
