@@ -1,0 +1,52 @@
+name: CI
+
+# Trigger the workflow on push or pull request
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release-'
+    tags: '*'
+  pull_request:
+
+concurrency:
+  # group by workflow and ref; the last slightly strange component ensures that for pull
+  # requests, we limit to 1 concurrent job, but for the master branch we don't
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref != 'refs/heads/master' || github.run_number }}
+  # Cancel intermediate builds, but only if it is a pull request build.
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  test:
+    name: ${{ matrix.os }} - ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        compiler: [g++, clang++]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Install dependencies"
+        run: |
+           sudo apt-get install \
+                clang \
+                fplll-tools \
+                libeigen3-dev \
+                libfplll-dev \
+                libgmp-dev \
+                libmpfr-dev \
+                libomp-dev
+
+      - run: cmake .
+        env:
+          CXX: ${{ matrix.compiler }}
+      - run: make
+      - run: sudo make install
+
+      - name: "Test flatter"
+        run: |
+           echo "TODO: run some actual tests"
