@@ -86,11 +86,9 @@ void Orthogonal::size_reduce(Matrix R, Matrix B, Matrix r_col, Matrix u_col, Mat
         mpz_set_ui(du_col(i, 0), 0);
     }
 
-    unsigned int iters = 0;
     int prev_max_mu = 1<<30;
 
     while (true) {
-        iters += 1;
         // Update the floating point R-factor based on the exact B column
         Matrix::copy(r_col, b_col);
         // Apply householder vectors to b

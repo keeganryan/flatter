@@ -1,5 +1,6 @@
 #include "data/lattice/profile.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
