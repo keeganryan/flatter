@@ -22,7 +22,8 @@ target_sources(flatter
     threaded_3.cpp
 )
 
-find_package(FPLLL REQUIRED)
+# Require fplll::set_external_enumerator
+find_package(FPLLL 5.1.0 REQUIRED)
 target_link_libraries(flatter
   PUBLIC
     ${FPLLL_LIBRARIES}
