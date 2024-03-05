@@ -554,7 +554,7 @@ void Schoenhage::solve() {
     dbl_d = mpz_get_d_2exp(&d_exp, b);
     double log_det = ((d_exp + log2(fabs(dbl_d))) - 2) / 2;
 
-    params.L.profile[1] = log_det - (a_exp - log2(fabs(dbl_a))) / 2;
+    params.L.profile[1] = log_det - (a_exp + log2(fabs(dbl_a))) / 2;
     mon->profile_update(
         &params.L.profile[0],
         profile_offset, offset, offset + 2);

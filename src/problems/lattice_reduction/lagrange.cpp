@@ -160,7 +160,7 @@ void Lagrange::solve() {
     d = mpfr_get_d_2exp(&d_exp, det, rnd);
 
     params.L.profile[0] = (a_exp + log2(a)) / 2;
-    params.L.profile[1] = d_exp + log2(d) - (a_exp - log2(a)) / 2;
+    params.L.profile[1] = d_exp + log2(d) - (a_exp + log2(a)) / 2;
     mon->profile_update(
         &params.L.profile[0],
         profile_offset,
