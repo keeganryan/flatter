@@ -4,6 +4,7 @@ project(flatter LANGUAGES CXX)
 
 #flag
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_INSTALL_RPATH "/usr/local/lib/")
 
 # includes
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
