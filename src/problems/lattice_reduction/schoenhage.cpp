@@ -34,7 +34,7 @@ void Schoenhage::configure(const LatticeReductionParams& p, const ComputationCon
     }
 
     Base::configure(p, cc);
-    assert(n == 2);
+    assert(n <= 2);
     assert(M.type() == ElementType::MPZ);
     assert(U.type() == ElementType::MPZ);
 
@@ -436,6 +436,12 @@ void Schoenhage::recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix 
 void Schoenhage::solve() {
     log_start();
 
+    if (n == 0) {
+        U.set_identity();
+        log_end();
+        return;
+    }
+
     mpz_t a, b, c;
     unsigned int m = 0; // s = 2**m = 1
     mpz_t tmp;
@@ -449,8 +455,27 @@ void Schoenhage::solve() {
     mpz_set_ui(b, 0);
     mpz_set_ui(c, 0);
 
-    // Calculate a = <b0, b0>, b = 2*<b0, b1>, c = <b1, b1>
+    // Calculate a = <b0, b0>
     MatrixData<mpz_t> dB = M.data<mpz_t>();
+    for (unsigned int i = 0; i < this->m; i++) {
+        mpz_mul(tmp, dB(i, 0), dB(i, 0));
+        mpz_add(a, a, tmp);
+    }
+
+    if (n == 1) {
+        long exp;
+        double d = mpz_get_d_2exp(&exp, a);
+        params.L.profile[0] = (exp + log2(fabs(d))) / 2;
+        U.set_identity();
+        mpz_clear(a);
+        mpz_clear(b);
+        mpz_clear(c);
+        mpz_clear(tmp);
+        log_end();
+        return;
+    }
+
+    // Calculate b = 2*<b0, b1>, c = <b1, b1>
     for (unsigned int i = 0; i < this->m; i++) {
         mpz_mul(tmp, dB(i, 0), dB(i, 0));
         mpz_add(a, a, tmp);

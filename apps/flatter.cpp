@@ -148,8 +148,16 @@ int main(int argc, char** argv) {
     alpha = 0.06250805094100162;
   }
 
+  if (!(*inp_lat)) {
+    std::cerr << "Problem with input stream." << std::endl;
+    return -1;
+  }
   flatter::Lattice L;
   (*inp_lat) >> L;
+  if (!(*inp_lat)) {
+    std::cerr << "Input lattice improperly formatted." << std::endl;
+    return -1;
+  }
 
   if (verbose) {
     std::cerr << "Input lattice of rank " << L.rank() << " and dimension " << L.dimension() << std::endl;

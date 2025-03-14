@@ -13,7 +13,7 @@ std::string Base::get_param_values() {
     std::stringstream ss;
     double p = 0;
     MatrixData<mpz_t> dM = M.data<mpz_t>();
-    for (unsigned int i = 0; i < n; i++) {
+    for (unsigned int i = 0; i < m; i++) {
         for (unsigned int j = 0; j < n; j++) {
             double prec = mpz_sizeinbase(dM(i,j), 2);
             p = std::max(prec, p);

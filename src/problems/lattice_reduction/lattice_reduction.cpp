@@ -71,7 +71,7 @@ void LatticeReduction::configure(const LatticeReductionParams& p,
     if (n <= 2) {
         if (p.B2.nrows() != 0) {
             latred = new LatticeReductionImpl::LatRedRelSR(p, cc);
-        } else if (prec < 1400 && m == 2) {
+        } else if (prec < 1400 && n == 2 && m == 2) {
             latred = new LatticeReductionImpl::Lagrange(p, cc);
         } else {
             latred = new LatticeReductionImpl::Schoenhage(p, cc);
