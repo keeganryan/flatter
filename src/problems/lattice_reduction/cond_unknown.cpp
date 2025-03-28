@@ -221,7 +221,6 @@ void CondUnknown::sort_by_size(Matrix B) {
     MatrixData<mpz_t> dU = U_sort.data<mpz_t>();
     unsigned int end_idx = B.ncols() - 1;
     unsigned int start_idx = 0;
-    unsigned int zero_vecs = 0;
     for (unsigned int i = 0; i < B.ncols(); i++) {
         auto it = std::min_element(std::begin(log_vec_lens), std::end(log_vec_lens));
         unsigned int j = std::distance(std::begin(log_vec_lens), it);
@@ -229,7 +228,6 @@ void CondUnknown::sort_by_size(Matrix B) {
             // Vector is 0, put it at the end
             mpz_set_ui(dU(j, end_idx), 1);
             end_idx--;
-            zero_vecs++;
         } else {
             // Vector is small, put it at the front
             mpz_set_ui(dU(j, start_idx), 1);
