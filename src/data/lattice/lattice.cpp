@@ -137,7 +137,9 @@ std::istream& operator>>(std::istream& is, Lattice& L) {
             return is;
         }
     }
-    
+    if (dim == 0) {
+        nvecs = 0;
+    }
     L.resize(nvecs, dim);
     flatter::MatrixData<mpz_t> dM = L.basis().data<mpz_t>();
 
