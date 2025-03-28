@@ -15,6 +15,7 @@ public:
     Lattice(Matrix B);
 
     void resize(unsigned int rank, unsigned int dimension);
+    void update_rank();
 
     Matrix basis() const;
     Matrix& basis();
@@ -26,6 +27,7 @@ public:
     friend std::istream& operator>>(std::istream& is, Lattice& L);
     friend std::ostream& operator<<(std::ostream& os, Lattice& L);
 private:
+    unsigned int rank_;
     Matrix B;
 };
 

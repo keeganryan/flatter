@@ -13,8 +13,8 @@ std::string Base::get_param_values() {
     std::stringstream ss;
     double p = 0;
     MatrixData<mpz_t> dM = M.data<mpz_t>();
-    for (unsigned int i = 0; i < m; i++) {
-        for (unsigned int j = 0; j < n; j++) {
+    for (unsigned int i = 0; i < dM.nrows(); i++) {
+        for (unsigned int j = 0; j < dM.ncols(); j++) {
             double prec = mpz_sizeinbase(dM(i,j), 2);
             p = std::max(prec, p);
         }
@@ -46,7 +46,7 @@ void Base::configure(const LatticeReductionParams& p,
     Matrix U = p.U();
     
     assert(M.ncols() == U.nrows());
-    assert(U.nrows() == U.ncols());
+    assert(p.L.rank() == U.ncols());
 
     this->params = p;
     

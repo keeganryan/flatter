@@ -14,19 +14,46 @@ Lattice::Lattice() :
     Lattice(0, 0)
 {}
 
-Lattice::Lattice(unsigned int rank, unsigned int dimension) {
-    this->B = Matrix(ElementType::MPZ, dimension, rank);
-    profile = Profile(rank);
+Lattice::Lattice(unsigned int nvecs, unsigned int dimension) {
+    this->B = Matrix(ElementType::MPZ, dimension, nvecs);
+    this->rank_ = std::min(dimension, nvecs);
+    profile = Profile(this->rank_);
 }
 
 Lattice::Lattice(Matrix B) {
     this->B = B;
-    profile = Profile(B.ncols());
+    this->rank_ = std::min(B.nrows(), B.ncols());
+    profile = Profile(this->rank_);
 }
 
-void Lattice::resize(unsigned int rank, unsigned int dimension) {
-    B = Matrix(ElementType::MPZ, dimension, rank);
-    profile = Profile(rank);
+void Lattice::resize(unsigned int nvecs, unsigned int dimension) {
+    B = Matrix(ElementType::MPZ, dimension, nvecs);
+    rank_ = std::min(dimension, nvecs);
+    profile = Profile(rank_);
+}
+
+void Lattice::update_rank() {
+    MatrixData<mpz_t> dB = B.data<mpz_t>();
+    for (unsigned int i = 0; i < B.ncols(); i++) {
+        unsigned int col = B.ncols() - 1 - i;
+        // if all entries in the column are 0, decrement the rank
+        unsigned int j;
+        for (j = 0; j < B.nrows(); j++) {
+            if (mpz_sgn(dB(j,col)) != 0) {
+                break;
+            }
+        }
+        if (j == B.nrows()) {
+            // all entries are 0
+            rank_ = col;
+        }
+    }
+    rank_ = std::min(rank_, B.nrows());
+    Profile new_profile = Profile(rank_);
+    for (unsigned int i = 0; i < rank_; i++) {
+        new_profile[i] = profile[i];
+    }
+    profile = new_profile;
 }
 
 Matrix Lattice::basis() const {
@@ -38,7 +65,7 @@ Matrix& Lattice::basis() {
 }
 
 unsigned int Lattice::rank() const {
-    return B.ncols();
+    return rank_;
 }
 
 unsigned int Lattice::dimension() const {

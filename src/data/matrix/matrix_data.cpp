@@ -68,6 +68,9 @@ unsigned int MatrixData<T>::ncols() const {
 
 template <class T>
 bool MatrixData<T>::is_upper_triangular() const {
+    if (nrows() != ncols()) {
+        return false;
+    }
     for (unsigned int i = 0; i < nrows(); i++) {
         for (unsigned int j = 0; j < i; j++) {
             if (get(i, j) != 0) {

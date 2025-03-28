@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
 
   flatter::Matrix U(
     flatter::ElementType::MPZ,
-    L.rank(), L.rank()
+    L.basis().ncols(), L.rank()
   );
   flatter::ComputationContext cc;
 
@@ -231,6 +231,7 @@ int main(int argc, char** argv) {
         latred.solve();
       }
   }
+  L.update_rank();
  
   auto elapsed = std::chrono::high_resolution_clock::now() - start;
   long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();

@@ -33,7 +33,10 @@ void Lagrange::configure(const LatticeReductionParams& p, const ComputationConte
     }
 
     Base::configure(p, cc);
-    assert(n <= 2 && m == n);
+    assert(n <= 2);
+    if (n == 2) {
+        assert(m == n);
+    }
 
     _is_configured = true;
 }

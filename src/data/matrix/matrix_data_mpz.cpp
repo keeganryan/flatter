@@ -36,6 +36,9 @@ bool MatrixData<mpz_t>::is_identity() const {
 
 template <>
 bool MatrixData<mpz_t>::is_upper_triangular() const {
+    if (nrows() != ncols()) {
+        return false;
+    }
     for (unsigned int i = 0; i < nrows(); i++) {
         for (unsigned int j = 0; j < i; j++) {
             if (mpz_cmp_ui(get(i, j), 0) != 0) {

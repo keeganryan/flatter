@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "cond_unknown.h"
 #include "fplll_impl.h"
 #include "irregular.h"
 
@@ -91,7 +92,13 @@ void LatticeReduction::configure(const LatticeReductionParams& p,
             if (p.phase == 0) {
                 latred = new LatticeReductionImpl::Irregular(p, cc);
             } else if (p.phase == 1) {
-                latred = new LatticeReductionImpl::Heuristic1(p, cc);
+                if (p.log_cond == 0) {
+                    // Condition number is unknown
+                    latred = new LatticeReductionImpl::CondUnknown(p, cc);
+                } else {
+                    // Condition number is known, basis is guaranteed to be nonsingular
+                    latred = new LatticeReductionImpl::Heuristic1(p, cc);
+                }
             } else if (p.phase > 1) {
                 if (n <= 32 && prec <= 128 && fplll) {
                     if (p.B2.nrows() != 0) {

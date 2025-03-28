@@ -43,7 +43,6 @@ void Irregular::configure(const LatticeReductionParams& p, const ComputationCont
 
     Base::configure(p, cc);
 
-    assert(m >= n);
     assert(M.is_transposed() == false);
     assert(U.is_transposed() == false);
     assert(M.type() == ElementType::MPZ || M.type() == ElementType::INT64);
@@ -232,14 +231,17 @@ void Irregular::solve_rectangular() {
     p.phase = 1;
     if (this->params.log_cond > 0) {
         p.log_cond = this->params.log_cond;
-    } else {
-        // Optimistic, the actual bound is O(n * log|M|),
-        // but this is good enough in practice
-        p.log_cond = M.prec() + 2*n;
     }
+    /* We could set log_cond to the pessimistic bound O(n * log|M|),
+        but this is not ideal, because 1. we don't know whether the rows
+        of L are linearly independent, and even if it were, the bound
+        is often overly pessimistic. Leave log_cond = 0, so reduction
+        is routed through CondUnknown.
+    */
     
-    p.profile_offset = new double[n];
-    for (unsigned int i = 0; i < n; i++) {
+    unsigned int r = L.rank();
+    p.profile_offset = new double[r];
+    for (unsigned int i = 0; i < r; i++) {
         p.profile_offset[i] = 0;
     }
     p.split = new SubSplitPhase2(n);
@@ -250,7 +252,7 @@ void Irregular::solve_rectangular() {
     LatticeReduction latred(p, cc);
     latred.solve();
 
-    for (unsigned int i = 0; i < n; i++) {
+    for (unsigned int i = 0; i < r; i++) {
         params.L.profile[i] = p.L.profile[i];
     }
 

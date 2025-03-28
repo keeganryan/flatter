@@ -1,6 +1,7 @@
 target_sources(flatter
   PRIVATE
     base.cpp
+    cond_unknown.cpp
     fplll_impl.cpp
     goal.cpp
     heuristic_1.cpp
