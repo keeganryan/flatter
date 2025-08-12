@@ -477,8 +477,6 @@ void Schoenhage::solve() {
 
     // Calculate b = 2*<b0, b1>, c = <b1, b1>
     for (unsigned int i = 0; i < this->m; i++) {
-        mpz_mul(tmp, dB(i, 0), dB(i, 0));
-        mpz_add(a, a, tmp);
         mpz_mul(tmp, dB(i, 0), dB(i, 1));
         mpz_add(b, b, tmp);
         mpz_mul(tmp, dB(i, 1), dB(i, 1));
