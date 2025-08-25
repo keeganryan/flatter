@@ -20,6 +20,8 @@ public:
 private:
     void unconfigure();
 
+    void xgcd(mpz_t& a, mpz_t& b, mpz_t& g, mpz_t& x, mpz_t& y);
+
     void norm2(mpfr_t& r, mpz_t& x1, mpz_t& x2, WorkspaceBuffer<mpfr_t>& ws);
 
     bool _is_configured;

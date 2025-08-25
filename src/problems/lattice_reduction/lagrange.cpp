@@ -41,6 +41,66 @@ void Lagrange::configure(const LatticeReductionParams& p, const ComputationConte
     _is_configured = true;
 }
 
+void Lagrange::xgcd(mpz_t& a, mpz_t& b, mpz_t& g, mpz_t& x, mpz_t& y) {
+    // The extended Euclidean algorithm shouldn't live in the Lagrange implementation,
+    // but it would require substantial rearchitecting and testing to relocate it
+
+    // Given a, b as input, generate g, x, y such that
+    //   g = GCD(a, b)
+    //   g = x*a + b*y
+    mpz_t old_r, r, old_s, s, old_t, t, q, tmp;
+    mpz_init(old_r);
+    mpz_init(r);
+    mpz_init(old_s);
+    mpz_init(s);
+    mpz_init(old_t);
+    mpz_init(t);
+    mpz_init(q);
+    mpz_init(tmp);
+
+    mpz_set(old_r, a);
+    mpz_set(r, b);
+    mpz_set_ui(old_s, 1);
+    mpz_set_ui(s, 0);
+    mpz_set_ui(old_t, 0);
+    mpz_set_ui(t, 1);
+
+    // We have the invariants
+    //     old_r == old_s * a + old_t * b
+    //     r == s * a + t * b
+    while (mpz_sgn(r) != 0) {
+        mpz_fdiv_q(q, old_r, r);
+
+        // Need old_r = r and r = old_r - q * r
+        mpz_mul(tmp, q, r);
+        mpz_sub(old_r, old_r, tmp);
+        mpz_swap(r, old_r);
+
+        // Need old_s = s and s = old_s - q * s
+        mpz_mul(tmp, q, s);
+        mpz_sub(old_s, old_s, tmp);
+        mpz_swap(s, old_s);
+
+        // Need old_t = t and t = old_t - q * t
+        mpz_mul(tmp, q, t);
+        mpz_sub(old_t, old_t, tmp);
+        mpz_swap(t, old_t);
+    }
+
+    mpz_set(g, old_r);
+    mpz_set(x, old_s);
+    mpz_set(y, old_t);
+
+    mpz_clear(old_r);
+    mpz_clear(r);
+    mpz_clear(old_s);
+    mpz_clear(s);
+    mpz_clear(old_t);
+    mpz_clear(t);
+    mpz_clear(q);
+    mpz_clear(tmp);
+}
+
 void Lagrange::solve() {
     log_start();
     if (n == 1) {
@@ -97,10 +157,77 @@ void Lagrange::solve() {
     mpfr_set(limit, det, rnd);
     mpfr_mul_d(limit, limit, hermite_factor, rnd);
 
-    // Make sure both columns of M are nonzero
     norm2(a_len, a0, a1, wsb);
-    assert(!mpfr_zero_p(a_len));
     norm2(b_len, b0, b1, wsb);
+
+    // Check to see if the columns are linearly dependent
+    if (mpfr_zero_p(det)) {
+        // They are. Handle this edge case.
+        bool rank_zero = false;
+
+        // Zero out U
+        for (unsigned int i = 0; i < dU.nrows(); i++) {
+            for (unsigned int j = 0; j < dU.ncols(); j++) {
+                mpz_set_ui(dU(i,j), 0);
+            }
+        }
+        if (mpfr_zero_p(a_len) && mpfr_zero_p(b_len)) {
+            // Both columns are zero vectors. If we do nothing, this will be handled later.
+            rank_zero = true;
+        } else if (mpfr_zero_p(a_len) && !mpfr_zero_p(b_len)) {
+            // The first vector is all zeros and the second is nonzero.
+            mpz_set_ui(U10, 1); // First vector in output is second vector in input
+        } else if (!mpfr_zero_p(a_len) && mpfr_zero_p(b_len)) {
+            // The first vector is nonzero and the second is all zeros.
+            mpz_set_ui(U00, 1); // First vector in output is first vector in input
+        } else {
+            // Both columns are nonzero, but they are linearly dependent.
+            // We need to do an extended GCD computation.
+
+            // We could just do a GCD computation on nonzero row
+            if (mpz_sgn(dM(0,0)) != 0) {
+                xgcd(dM(0,0), dM(0, 1), tmp_z, U00, U10);
+            } else {
+                // If the first row is 0, then the second row must be nonzero.
+                xgcd(dM(1,0), dM(1, 1), tmp_z, U00, U10);
+            }
+
+            // Apply U to M
+            mpz_mul(tmp_z, U00, a0);
+            mpz_mul(q_z, U10, b0);
+            mpz_add(a0, tmp_z, q_z);
+            mpz_set_ui(b0, 0);
+
+            mpz_mul(tmp_z, U00, a1);
+            mpz_mul(q_z, U10, b1);
+            mpz_add(a1, tmp_z, q_z);
+            mpz_set_ui(b1, 0);
+
+            if (!rank_zero) {
+                // To update the profile, we need to know how long the new vector is.
+                norm2(a_len, a0, a1, wsb);
+
+                double a;
+                long a_exp;
+                a = mpfr_get_d_2exp(&a_exp, a_len, rnd);
+
+                params.L.profile[0] = (a_exp + log2(a)) / 2;
+
+                mon->profile_update(
+                    &params.L.profile[0],
+                    profile_offset, offset, offset + 1);
+            }
+        }
+
+        Matrix::copy(M, ZM);
+        Matrix::copy(U, ZU);
+
+        log_end();
+        return;
+    }
+
+    // Make sure both columns of M are nonzero
+    assert(!mpfr_zero_p(a_len));
     assert(!mpfr_zero_p(b_len));
 
     if (mpfr_cmp(a_len, b_len) < 0) {

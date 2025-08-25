@@ -18,6 +18,8 @@ public:
 private:
     void unconfigure();
 
+    void xgcd(mpz_t& a, mpz_t& b, mpz_t& g, mpz_t& x, mpz_t& y);
+
     void nonrecursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix U);
     void recursive(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, Matrix U);
 

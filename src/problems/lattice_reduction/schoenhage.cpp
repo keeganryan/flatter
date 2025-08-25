@@ -41,6 +41,66 @@ void Schoenhage::configure(const LatticeReductionParams& p, const ComputationCon
     _is_configured = true;
 }
 
+void Schoenhage::xgcd(mpz_t& a, mpz_t& b, mpz_t& g, mpz_t& x, mpz_t& y) {
+    // The extended Euclidean algorithm shouldn't live in the Schoenhage implementation,
+    // but it would require substantial rearchitecting and testing to relocate it
+
+    // Given a, b as input, generate g, x, y such that
+    //   g = GCD(a, b)
+    //   g = x*a + b*y
+    mpz_t old_r, r, old_s, s, old_t, t, q, tmp;
+    mpz_init(old_r);
+    mpz_init(r);
+    mpz_init(old_s);
+    mpz_init(s);
+    mpz_init(old_t);
+    mpz_init(t);
+    mpz_init(q);
+    mpz_init(tmp);
+
+    mpz_set(old_r, a);
+    mpz_set(r, b);
+    mpz_set_ui(old_s, 1);
+    mpz_set_ui(s, 0);
+    mpz_set_ui(old_t, 0);
+    mpz_set_ui(t, 1);
+
+    // We have the invariants
+    //     old_r == old_s * a + old_t * b
+    //     r == s * a + t * b
+    while (mpz_sgn(r) != 0) {
+        mpz_fdiv_q(q, old_r, r);
+
+        // Need old_r = r and r = old_r - q * r
+        mpz_mul(tmp, q, r);
+        mpz_sub(old_r, old_r, tmp);
+        mpz_swap(r, old_r);
+
+        // Need old_s = s and s = old_s - q * s
+        mpz_mul(tmp, q, s);
+        mpz_sub(old_s, old_s, tmp);
+        mpz_swap(s, old_s);
+
+        // Need old_t = t and t = old_t - q * t
+        mpz_mul(tmp, q, t);
+        mpz_sub(old_t, old_t, tmp);
+        mpz_swap(t, old_t);
+    }
+
+    mpz_set(g, old_r);
+    mpz_set(x, old_s);
+    mpz_set(y, old_t);
+
+    mpz_clear(old_r);
+    mpz_clear(r);
+    mpz_clear(old_s);
+    mpz_clear(s);
+    mpz_clear(old_t);
+    mpz_clear(t);
+    mpz_clear(q);
+    mpz_clear(tmp);
+}
+
 void Schoenhage::simple_step(mpz_t& a, mpz_t& b, mpz_t& c, unsigned int m, mpz_t& t, bool& is_low_step) {
     // Do a single step above 2**m.
     // According to the paper, t >= 0, but this seems like it is not always the case.
@@ -444,12 +504,13 @@ void Schoenhage::solve() {
 
     mpz_t a, b, c;
     unsigned int m = 0; // s = 2**m = 1
-    mpz_t tmp;
+    mpz_t tmp, det2;
 
     mpz_init(a);
     mpz_init(b);
     mpz_init(c);
     mpz_init(tmp);
+    mpz_init(det2);
 
     mpz_set_ui(a, 0);
     mpz_set_ui(b, 0);
@@ -471,6 +532,7 @@ void Schoenhage::solve() {
         mpz_clear(b);
         mpz_clear(c);
         mpz_clear(tmp);
+        mpz_clear(det2);
         log_end();
         return;
     }
@@ -483,6 +545,89 @@ void Schoenhage::solve() {
         mpz_add(c, c, tmp);
     }
     mpz_mul_2exp(b, b, 1);
+
+    // determinant = b1[0] * b2[1] - b2[0] * b1[1]
+    // b^2/4 - ac = <b1, b2>**2 - <b1,b1><b2,b2>
+    // = (b1[0] * b2[0] + b1[1] * b2[1])**2 - (b1[0] * b1[0] + b1[1]*b1[1]) * (b2[0] * b2[0] + b2[1] * b2[1])
+    // = b10*b10*b20*b20 + 2*b10*b20*b11*b21 + b11*b11*b21*b21 - b10b10b20b20 - b10b10b21b21 - b11b11b20b20 - b11b11b21b21
+    // = 2*b10*b20*b11*b21 - b10b10b21b21 - b11b11b20b20
+    // = -(b10b21 - b11b20)^2
+    // Thus abs(b^2 - 4*a*c) = 4*abs(det)^2
+    // Let's use tmp and det2 to calculate 4*det^2
+    mpz_mul(det2, b, b);
+    mpz_mul(tmp, a, c);
+    mpz_mul_2exp(tmp, tmp, 2);
+    mpz_sub(det2, det2, tmp); // det2 = b^2 - 4ac
+
+    MatrixData<mpz_t> dU = U.data<mpz_t>();
+    if (mpz_sgn(det2) == 0) {
+        // The input is linearly dependent. Handle this edge case.
+        bool rank_zero = false;
+        // Zero out U
+        for (unsigned int i = 0; i < dU.nrows(); i++) {
+            for (unsigned int j = 0; j < dU.ncols(); j++) {
+                mpz_set_ui(dU(i,j), 0);
+            }
+        }
+
+        if (mpz_sgn(a) == 0 && mpz_sgn(c) == 0) {
+            // Both columns are zero vectors. If we do nothing, this will be handled later.
+            rank_zero = true;
+        } else if (mpz_sgn(a) == 0 && mpz_sgn(c) != 0) {
+            // The first vector is all zeros and the second is nonzero.
+            mpz_set_ui(dU(1,0), 1); // First vector in output is second vector in input
+        } else if (mpz_sgn(a) != 0 && mpz_sgn(c) == 0) {
+            // The first vector is nonzero and the second is all zeros.
+            mpz_set_ui(dU(0,0), 1); // First vector in output is first vector in input
+        } else {
+            // Both columns are nonzero, but they are linearly dependent.
+            // We need to do an extended GCD computation.
+
+            // We could just do a GCD computation on 2*<b0, b0>, 2*<b0, b1>
+            // which is just 2*a and b
+            mpz_mul_2exp(a, a, 1);
+            xgcd(a, b, tmp, dU(0,0), dU(1,0));
+        }
+
+        // Apply U to M
+        MatrixMultiplication mm(M.submatrix(0, M.nrows(), 0, U.ncols()), M, U, cc);
+        mm.solve();
+
+        MatrixData<mpz_t> dM = M.data<mpz_t>();
+        for (unsigned int j = U.ncols(); j < M.ncols(); j++) {
+            // In case U is narrower than M (because we know the lattice is low rank)
+            for (unsigned int i = 0; i < M.nrows(); i++) {
+                mpz_set_ui(dM(i,j), 0);
+            }
+        }
+
+        if (!rank_zero) {
+            // To update the profile, we need to know how long the new vector is.
+            MatrixData<mpz_t> dM = M.data<mpz_t>();
+            mpz_set_ui(det2, 0);
+            for (unsigned int i = 0; i < this->m; i++) {
+                mpz_mul(tmp, dM(i, 0), dM(i, 0));
+                mpz_add(det2, det2, tmp);
+            }
+
+            double dbl_d;
+            long d_exp;
+            dbl_d = mpz_get_d_2exp(&d_exp, det2);
+
+            params.L.profile[0] = (d_exp + log2(dbl_d)) / 2;
+            mon->profile_update(
+                &params.L.profile[0],
+                profile_offset, offset, offset + 1);
+        }
+
+        mpz_clear(a);
+        mpz_clear(b);
+        mpz_clear(c);
+        mpz_clear(tmp);
+        mpz_clear(det2);
+        log_end();
+        return;
+    }
 
     bool flipped_b;
     // a and c are guaranteed to be positive, as they are
@@ -523,7 +668,6 @@ void Schoenhage::solve() {
     //   2*<b0,b1> <= ||b0||^2
     //   a <= c && |b| <= a
     // c <- c - b + a
-    MatrixData<mpz_t> dU = U.data<mpz_t>();
     
     // The first property is easy to satisfy, since we just optionally flip a and c
     // so a is smaller
@@ -567,19 +711,7 @@ void Schoenhage::solve() {
     dbl_a = mpz_get_d_2exp(&a_exp, a);
 
     params.L.profile[0] = (a_exp + log2(dbl_a)) / 2;
-    // determinant = b1[0] * b2[1] - b2[0] * b1[1]
-    // b^2/4 - ac = <b1, b2>**2 - <b1,b1><b2,b2>
-    // = (b1[0] * b2[0] + b1[1] * b2[1])**2 - (b1[0] * b1[0] + b1[1]*b1[1]) * (b2[0] * b2[0] + b2[1] * b2[1])
-    // = b10*b10*b20*b20 + 2*b10*b20*b11*b21 + b11*b11*b21*b21 - b10b10b20b20 - b10b10b21b21 - b11b11b20b20 - b11b11b21b21
-    // = 2*b10*b20*b11*b21 - b10b10b21b21 - b11b11b20b20
-    // = -(b10b21 - b11b20)^2
-    // Thus abs(b^2 - 4*a*c) = 4*abs(det)^2
-    // Let's use tmp and b to calculate det^2
-    mpz_mul(b, b, b);
-    mpz_mul(tmp, a, c);
-    mpz_mul_2exp(tmp, tmp, 2);
-    mpz_sub(b, b, tmp); // b = b^2 - 4ac
-    dbl_d = mpz_get_d_2exp(&d_exp, b);
+    dbl_d = mpz_get_d_2exp(&d_exp, det2);
     double log_det = ((d_exp + log2(fabs(dbl_d))) - 2) / 2;
 
     params.L.profile[1] = log_det - (a_exp + log2(fabs(dbl_a))) / 2;
@@ -595,6 +727,7 @@ void Schoenhage::solve() {
     mpz_clear(b);
     mpz_clear(c);
     mpz_clear(tmp);
+    mpz_clear(det2);
 
     log_end();
 }

@@ -141,7 +141,7 @@ void CondUnknown::extract_similar(const Matrix& B, unsigned int prec, Matrix Bsi
 
         double new_spread = std::max(curmax, log_vec_len) - std::min(curmin, log_orth_len);
         unsigned int required_prec = 2 * new_spread + 40;
-        if (!std::isinf(new_spread) && required_prec <= prec) {
+        if (!std::isinf(new_spread) && !std::isnan(new_spread) && required_prec <= prec) {
             // Copy from R_unsorted to R
             Matrix::copy(R.submatrix(0, R.nrows(), num_valid, num_valid+1), R_unsorted.submatrix(0, R.nrows(), j, j+1));
             mpz_set_ui(dU(j,j), 0);
@@ -266,7 +266,7 @@ bool CondUnknown::refine_basis() {
     sr.solve();
 
     Matrix U_2d;
-    if (num_valid < B_sim.ncols()) {
+    if (0 < num_valid && num_valid < B_sim.ncols()) {
         U_2d = U_2.submatrix(0, num_valid, num_valid, B_sim.ncols());
         RelativeSizeReductionParams rsr_params (B_sim_indep, B_sim_dep, U_2d);
         RelativeSizeReduction rsr(rsr_params, cc);
@@ -306,8 +306,10 @@ bool CondUnknown::refine_basis() {
     }
 
     apply_perm(U_1);
-    apply_U(U_2i, U_2d);
-    apply_U(U_3i, U_3d);
+    if (num_valid > 0) {
+        apply_U(U_2i, U_2d);
+        apply_U(U_3i, U_3d);
+    }
 
     // How many zero vectors are there?
     MatrixData<mpz_t> dB = B.data<mpz_t>();
