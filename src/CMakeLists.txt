@@ -5,6 +5,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 #files
 
 #includes
+# Manually specify OpenMP paths
+set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include")
+set(OpenMP_CXX_LIB_NAMES "omp")
+set(OpenMP_omp_LIBRARY "/opt/homebrew/opt/libomp/lib/libomp.dylib")
 find_package(OpenMP REQUIRED)
 find_package(GMP REQUIRED)
 find_package(LAPACK REQUIRED)
@@ -36,7 +40,7 @@ target_sources(flatter
     profile.cpp
 )
 
-target_compile_options(flatter PRIVATE -Wall -Werror)
+target_compile_options(flatter PRIVATE -Wall -Werror -std=c++17)
 
 #external libraries
 target_link_libraries(flatter
