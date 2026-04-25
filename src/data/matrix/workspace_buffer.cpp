@@ -1,6 +1,7 @@
 #include "workspace_buffer.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <mpfr.h>
 

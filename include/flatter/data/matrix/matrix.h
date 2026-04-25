@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <mpfr.h>
 #include <memory>
 

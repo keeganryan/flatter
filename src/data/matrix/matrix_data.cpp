@@ -1,6 +1,7 @@
 #include "data/matrix/matrix_data.h"
 
 #include <cassert>
+#include <cstdint>
 #include <mpfr.h>
 
 namespace flatter {
